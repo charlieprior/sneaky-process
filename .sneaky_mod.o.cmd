@@ -925,6 +925,7 @@ deps_/home/ece650/Downloads/homework5-kit/sneaky_mod.o := \
     $(wildcard include/config/context/tracking.h) \
   arch/x86/include/asm/cacheflush.h \
   include/asm-generic/cacheflush.h \
+  include/linux/dirent.h \
   include/linux/kallsyms.h \
     $(wildcard include/config/kallsyms/all.h) \
   arch/x86/include/asm/sections.h \
