@@ -29,6 +29,7 @@ __used __section(__versions) = {
 	{ 0xe007de41, "kallsyms_lookup_name" },
 	{ 0x8b9200fd, "lookup_address" },
 	{ 0xc5850110, "printk" },
+	{ 0x9166fada, "strncpy" },
 	{ 0x1e6d26a8, "strstr" },
 	{ 0xb0e602eb, "memmove" },
 	{ 0xe2d5255a, "strcmp" },
@@ -43,4 +44,4 @@ __used __section(__versions) = {
 MODULE_INFO(depends, "");
 
 
-MODULE_INFO(srcversion, "2D9CB48109F80CEC0C23041");
+MODULE_INFO(srcversion, "CCD016725BD592F45C132AC");

