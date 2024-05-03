@@ -1,2 +1,2 @@
-/home/ece650/Downloads/homework5-kit/sneaky_mod.o
+/home/cgp26/sneaky-process/sneaky_mod.o
 
