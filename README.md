@@ -1,5 +1,7 @@
 # Linux Kernel Rootkit
-This program was created to learn linux kernel module programming in C. The original assignment problem is pasted below.
+This program was created to learn Linux kernel module programming in C. The original assignment problem is pasted below. It is known to work with the 5.4.0-104-generic Linux kernel.
+
+**Warning: This is _malware_, and will almost certainly damage your computer if you run it. The code is provided for educational purposes only, and if you run it, I highly suggest you do so on a virtual machine.**
 
 ## Overview
 In this assignment, you will implement a portion of Rootkit functionality to gain:
